@@ -1,1 +1,195 @@
-<h1>Hello World!</h1>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App (To-be-Named)</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.esm-browser.js",
+          "@graffiti-garden/implementation-local": "https://cdn.jsdelivr.net/npm/@graffiti-garden/implementation-local@0.6.4/dist/browser/index.js",
+          "@graffiti-garden/implementation-remote": "https://cdn.jsdelivr.net/npm/@graffiti-garden/implementation-remote@0.6.2/dist/browser/index.js",
+          "@graffiti-garden/wrapper-vue": "https://cdn.jsdelivr.net/npm/@graffiti-garden/wrapper-vue@0.7.2/dist/browser/plugin.mjs"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <h1>App (To-be-Named)</h1>
+      <button v-if="!$graffitiSession.value" @click="$graffiti.login()">
+        Log In
+      </button>
+      <template v-else>
+        <button @click="$graffiti.logout($graffitiSession.value)">
+          Log Out
+        </button>
+        <form @submit.prevent="sendMessage($graffitiSession.value)">
+          <fieldset :disabled="sending">
+            <input
+              type="text"
+              v-model="myMessage"
+              placeholder="Message"
+              ref="messageInput"
+              v-focus
+            />
+            <input type="submit" :value="sending? 'Sending...' : 'Send'" />
+          </fieldset>
+        </form>
+      </template>
+
+      <div class="sidebar">
+        <h2>Group Chats</h2>
+        <!-- group chats -->
+        <div v-if="showChatForm" class="group-chat-form">
+          <h3>Create New Chat</h3>
+          <input
+            v-model="newChatName"
+            placeholder="Enter chat name"
+            @keyup.enter="createChat"
+          />
+          <button
+            @click="createChat"
+            :disabled="!newChatName.trim() || sending"
+          >
+            {{ sending ? "Creating..." : "Create" }}
+          </button>
+        </div>
+
+        <button v-else @click="showChatForm = true">Create New Chat</button>
+        <!-- use groupChatSchema to show only created group chats -->
+        <div>
+          <graffiti-discover
+            v-slot="{ objects: groupChatObjects }"
+            :channels="['designftw']"
+            :schema="groupChatSchema"
+          >
+            <ul>
+              <li
+                v-for="chat in groupChatObjects"
+                :key="chat.value.object.channel"
+                @click="enterGroupChat(chat.value.object.channel)"
+              >
+                <!-- normal mode (display the current name) -->
+                <div
+                  v-if="!renamingChat || renamingChat.channel !== chat.value.object.channel"
+                >
+                  <graffiti-discover
+                    v-slot="{ objects: nameObjects }"
+                    :channels="[chat.value.object.channel, 'designftw']"
+                    :schema="{
+                  properties: {
+                    value: {
+                      required: ['name', 'describes'],
+                      properties: {
+                        name: {
+                          type: 'string'
+                        },
+                        describes: {
+                          type: 'string'
+                        }
+                      }
+                    }
+                  }
+                }"
+                    @update:objects="handleNameObjectsUpdate"
+                  >
+                    <span @click="enterGroupChat(chat.value.object.channel)">
+                      {{ getCurrentChatName(chat) }}
+                    </span>
+
+                    <button @click="startRenaming(chat)">Rename</button>
+                  </graffiti-discover>
+                </div>
+
+                <!-- edit mode -->
+                <div v-else>
+                  <input
+                    v-model="renamingChat.newName"
+                    @keyup.enter="saveRename($graffitiSession.value)"
+                    :placeholder="getCurrentChatName"
+                  />
+                  <button @click="saveRename($graffitiSession.value)">
+                    Save
+                  </button>
+                  <button @click="cancelRename">Cancel</button>
+                </div>
+              </li>
+            </ul>
+          </graffiti-discover>
+        </div>
+      </div>
+
+      <div class="chat-window">
+        <h2>Messages</h2>
+        <graffiti-discover
+          v-slot="{ objects: messageObjects, isInitialPolling }"
+          :channels="currentChannel ? [currentChannel] : []"
+          :schema="{
+                    properties: {
+                        value: {
+                            required: ['content', 'published'],
+                            properties: {
+                                content: { type: 'string' },
+                                published: { type: 'number' }
+                            }
+                        }
+                    }
+                }"
+        >
+          <!-- message display (only shows when in a channel) -->
+          <div v-if="currentChannel">
+            <button @click="exitGroupChat">Exit Chat</button>
+            <ul>
+              <li v-if="isInitialPolling">Loading...</li>
+              <li
+                v-for="object of messageObjects.sort((a, b) => b.value.published - a.value.published)"
+                :key="object.url"
+              >
+                <!-- normal message display -->
+                <div
+                  v-if="!editingMessage || editingMessage.url !== object.url"
+                >
+                  <strong>
+                    {{ object.actor }}<span
+                      v-if="object.actor===$graffitiSession.value.actor"
+                    >
+                      (you)</span
+                    > </strong
+                  >: {{ object.value.content }}
+
+                  <!-- only show edit/delete for your own messages -->
+                  <span v-if="object.actor === $graffitiSession.value.actor">
+                    <button @click="startEditing(object)">Edit</button>
+                    <button
+                      @click="deleteMessage(object, $graffitiSession.value)"
+                    >
+                      Delete
+                    </button>
+                  </span>
+                </div>
+
+                <!-- edit form (only shows for the message being edited) -->
+                <div v-else>
+                  <input
+                    :value="editingMessage.content"
+                    @input="editingMessage.content = $event.target.value"
+                    @keyup.enter="saveEdit($graffitiSession.value)"
+                  />
+                  <button @click="saveEdit($graffitiSession.value)">
+                    Save
+                  </button>
+                  <button @click="cancelEdit">Cancel</button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </graffiti-discover>
+      </div>
+    </div>
+
+    <script src="index.js" type="module"></script>
+  </body>
+</html>
