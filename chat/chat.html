@@ -33,7 +33,7 @@
           <div class="profile-dropdown">
             <button class="profile-icon" @click="toggleProfileMenu">
               <img
-                :src="profile.picture || '/assets/default-profile-pic.png'"
+                :src="profile.picture || '../assets/default-profile-pic.png'"
                 alt="Profile Picture"
               />
             </button>
@@ -98,7 +98,7 @@
                 class="create-chat-icon"
                 @click="showCreateChatModal = true"
               >
-                <img :src="'/assets/create-dm.png'" alt="Create DM" />
+                <img :src="'../assets/create-dm.png'" alt="Create DM" />
               </button>
             </div>
 
