@@ -16,9 +16,9 @@ export const saveProfile = async (profileData, sessionStorage, graffiti) => {
   await graffiti.put(
     {
       value: {
-        name: profileData.name || "",
+        name: profileData.name || "Anonymous",
         bio: profileData.bio || "",
-        picture: profileData.picture || "default-profile-pic.png",
+        picture: profileData.picture || "../assets/default-profile-pic.png",
         updated: Date.now(),
       },
       channels: [session.actor, "public-profiles"], // store in the user's own channel + public channel

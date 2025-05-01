@@ -2,7 +2,10 @@ import { createApp } from "vue";
 import { graffiti } from "../shared/shared.js";
 import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
 
-createApp({
+/** components */
+import ProfileSummary from "../shared/ProfileSummary.js";
+
+const app = createApp({
   data() {
     return {
       /** messaging */
@@ -149,25 +152,11 @@ createApp({
       this.showProfileModal = true;
     },
 
-    async searchUsers(event) {
-      const searchTerm = event.target.value.toLowerCase();
-      if (!searchTerm.trim()) {
-        this.searchResults = [];
-        return;
-      }
-      this.searchResults = await this.$graffiti.search({
-        schema: {
-          properties: {
-            name: { type: "string" },
-            bio: { type: "string" },
-            picture: { type: "string" },
-          },
-        },
-        channel: "public-profiles", // all profiles go here
-      });
-
-      this.searchResults = this.searchResults.filter((user) =>
-        user.profile.name.toLowerCase().includes(searchTerm)
+    filterProfiles(profiles) {
+      return profiles.filter((profile) =>
+        profile.value.name
+          .toLowerCase()
+          .includes(this.userSearchQuery.toLowerCase())
       );
     },
 
@@ -190,6 +179,8 @@ createApp({
       return this.chats.sort((a, b) => b.time - a.time);
     },
   },
-})
-  .use(GraffitiPlugin, { graffiti })
-  .mount("#app");
+}).use(GraffitiPlugin, { graffiti });
+
+app.component("profile-summary", ProfileSummary);
+console.log(app.component("profile-summary"));
+app.mount("#app");

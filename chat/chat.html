@@ -49,7 +49,7 @@
         </div>
 
         <!-- profile modal (hidden by default) -->
-        <div class="modal" v-if="showProfileModal">
+        <div class="modal" v-if="showProfileModal && !showProfileMenu">
           <div class="modal-content">
             <span
               class="close"
@@ -108,18 +108,27 @@
                 <input
                   v-model="userSearchQuery"
                   placeholder="Search for user by name..."
-                  @input="searchUsers"
                 />
 
-                <div class="user-results">
+                <graffiti-discover
+                  :channels="['public-profiles']"
+                  :schema="{
+                    properties: {
+                        name: {type: 'string'},
+                        picture: {type: 'string'}
+                    }
+                }"
+                  v-slot="{objects: profiles}"
+                >
                   <div
-                    v-for="user in searchResults"
-                    @click="startChat(user.actor)"
+                    v-for="profile in filterProfiles(profiles)"
+                    @click="startChat(profile.actor)"
+                    class="user-results"
                   >
-                    <img :src="user.profile.picture" />
-                    {{user.profile.name}} {{user.profile.bio}}
+                    <!-- component (hw11) -->
+                    <profile-summary :profile="profile" />
                   </div>
-                </div>
+                </graffiti-discover>
               </div>
             </div>
 
