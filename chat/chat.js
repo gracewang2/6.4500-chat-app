@@ -1,5 +1,5 @@
 import { createApp } from "vue";
-import { graffiti } from "../shared/shared.js";
+import { graffiti, getProfile, saveProfile } from "../shared/shared.js";
 import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
 
 /** components */
