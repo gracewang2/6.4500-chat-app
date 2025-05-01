@@ -1,0 +1,93 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: white;
+  color: black;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#app {
+  width: 100%;
+}
+
+/* chat container */
+.chat-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+}
+
+/* chat-list sidebar */
+.sidebar {
+  width: 15.625vw; /* 150 / 960 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-right: 1px solid black;
+}
+
+/* create chat button (top of sidebar) */
+.sidebar-header {
+  display: flex;
+  justify-content: flex-end; /* push button to the right */
+  padding: 12px;
+  border-bottom: 2px solid black;
+}
+
+.create-chat-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.create-chat-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s;
+}
+
+.create-chat-icon:hover {
+  box-shadow: 0px 5px 5px #454545;
+}
+
+/* chat list (scrollable) */
+.chat-list {
+  flex-grow: 1;
+  overflow-y: auto; /* enables scrolling */
+}
+
+/* individual chat items */
+.chat-item {
+  padding: 12px 16px;
+  border: 1px solid black;
+  cursor: pointer;
+}
+
+.chat-item:hover {
+  background: #ddedff;
+}
+
+.chat-item.active {
+  background: #3f82ff;
+  color: white;
+}
+
+/* main chat window */
+.chat-window {
+  flex-grow: 1; /* takes all remaining space */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}

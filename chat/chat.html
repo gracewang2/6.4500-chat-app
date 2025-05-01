@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.esm-browser.js",
+          "@graffiti-garden/implementation-local": "https://cdn.jsdelivr.net/npm/@graffiti-garden/implementation-local@0.6.4/dist/browser/index.js",
+          "@graffiti-garden/implementation-remote": "https://cdn.jsdelivr.net/npm/@graffiti-garden/implementation-remote@0.6.2/dist/browser/index.js",
+          "@graffiti-garden/wrapper-vue": "https://cdn.jsdelivr.net/npm/@graffiti-garden/wrapper-vue@0.7.2/dist/browser/plugin.mjs"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="chat.css" />
+    <link rel="stylesheet" href="/shared/shared.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- login / logout -->
+      <button v-if="!$graffitiSession.value" @click="$graffiti.login()">
+        Log In
+      </button>
+      <template v-else>
+        <!-- navigation bar -->
+        <div class="nav-bar">
+          <button class="nav-tab active" data-tab="chat">CHAT</button>
+          <button class="nav-tab" data-tab="learn">LEARN</button>
+
+          <!-- dropdown menu (hidden by default) -->
+          <div class="profile-dropdown">
+            <button class="profile-icon" @click="toggleProfileMenu">
+              <img
+                :src="profile.picture || '/assets/default-profile-pic.png'"
+                alt="Profile Picture"
+              />
+            </button>
+            <div class="profile-menu" v-if="showProfileMenu">
+              <button @click="openProfileModal">⚙️ User Settings</button>
+              <button
+                @click="$graffiti.logout($graffitiSession.value); showProfileMenu = false"
+              >
+                ⬅️ Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- profile modal (hidden by default) -->
+        <div class="modal" v-if="showProfileModal">
+          <div class="modal-content">
+            <span
+              class="close"
+              @click="showProfileModal = false; showProfileMenu = false"
+            >
+              &times;
+            </span>
+            <!-- left-column (profile information) -->
+            <div class="left-column">
+              <h2>👤 Profile Information</h2>
+              <div class="form-group">
+                <label>Name</label>
+                <input v-model="profile.name" placeholder="Name" />
+              </div>
+              <div class="form-group">
+                <label>About Me</label>
+                <textarea
+                  v-model="profile.bio"
+                  placeholder="About Me"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label>Profile Picture</label>
+                <input
+                  type="file"
+                  @change="handlePictureUpload"
+                  accept="image/*"
+                />
+              </div>
+              <button @click="updateProfile">Update Profile</button>
+            </div>
+
+            <!-- right-column (language & region) -->
+            <div class="right-column">
+              <h2>🌐 Language and Region</h2>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-container">
+          <!-- DM chats -->
+          <div class="sidebar">
+            <!-- create new DM (top) -->
+            <div class="sidebar-header">
+              <button
+                class="create-chat-icon"
+                @click="showCreateChatModal = true"
+              >
+                <img :src="'/assets/create-dm.png'" alt="Create DM" />
+              </button>
+            </div>
+
+            <!-- user search modal (hidden by default) -->
+            <div class="small-modal" v-if="showCreateChatModal">
+              <div class="small-modal-content">
+                <input
+                  v-model="userSearchQuery"
+                  placeholder="Search for user by name..."
+                  @input="searchUsers"
+                />
+
+                <div class="user-results">
+                  <div
+                    v-for="user in searchResults"
+                    @click="startChat(user.actor)"
+                  >
+                    <img :src="user.profile.picture" />
+                    {{user.profile.name}} {{user.profile.bio}}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- chat list -->
+            <div class="chat-list">
+              <div
+                v-for="chat in sortedChats"
+                :key="chat.channel"
+                class="chat-item"
+                @click="currentChannel = chat.channel"
+              >
+                {{chat.name}}
+              </div>
+            </div>
+          </div>
+
+          <!-- messages -->
+          <div class="chat-window">
+            <form @submit.prevent="sendMessage($graffitiSession.value)">
+              <fieldset :disabled="sending">
+                <input
+                  type="text"
+                  v-model="myMessage"
+                  placeholder="Message"
+                  ref="messageInput"
+                  v-focus
+                />
+                <input type="submit" :value="sending? 'Sending...' : 'Send'" />
+              </fieldset>
+            </form>
+            <graffiti-discover
+              v-slot="{ objects: messageObjects, isInitialPolling }"
+              :channels="currentChannel ? [currentChannel] : []"
+              :schema="{
+                    properties: {
+                        value: {
+                            required: ['content', 'published'],
+                            properties: {
+                                content: { type: 'string' },
+                                published: { type: 'number' }
+                            }
+                        }
+                    }
+                }"
+            >
+              <!-- message display (only shows when in a channel) -->
+              <div v-if="currentChannel">
+                <ul>
+                  <li v-if="isInitialPolling">Loading...</li>
+                  <li
+                    v-for="object of messageObjects.sort((a, b) => b.value.published - a.value.published)"
+                    :key="object.url"
+                  >
+                    <!-- normal message display -->
+                    <div
+                      v-if="!editingMessage || editingMessage.url !== object.url"
+                    >
+                      <strong>
+                        {{ object.actor }}<span
+                          v-if="object.actor===$graffitiSession.value.actor"
+                        >
+                          (you)</span
+                        > </strong
+                      >: {{ object.value.content }}
+
+                      <!-- only show edit/delete for your own messages -->
+                      <span
+                        v-if="object.actor === $graffitiSession.value.actor"
+                      >
+                        <button @click="startEditing(object)">Edit</button>
+                        <button
+                          @click="deleteMessage(object, $graffitiSession.value)"
+                        >
+                          Delete
+                        </button>
+                      </span>
+                    </div>
+
+                    <!-- edit form (only shows for the message being edited) -->
+                    <div v-else>
+                      <input
+                        :value="editingMessage.content"
+                        @input="editingMessage.content = $event.target.value"
+                        @keyup.enter="saveEdit($graffitiSession.value)"
+                      />
+                      <button @click="saveEdit($graffitiSession.value)">
+                        Save
+                      </button>
+                      <button @click="cancelEdit">Cancel</button>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </graffiti-discover>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <script src="chat.js" type="module"></script>
+  </body>
+</html>
