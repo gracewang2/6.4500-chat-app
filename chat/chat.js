@@ -120,6 +120,7 @@ const app = createApp({
     },
 
     async updateProfile() {
+      console.log(this.profile);
       await saveProfile(
         // implemented in shared.js
         this.profile,
@@ -153,19 +154,23 @@ const app = createApp({
     },
 
     filterProfiles(profiles) {
-      return profiles.filter((profile) =>
+      console.log(profiles);
+      this.searchResults = profiles.filter((profile) =>
         profile.value.name
           .toLowerCase()
           .includes(this.userSearchQuery.toLowerCase())
       );
+      return this.searchResults;
     },
 
-    startChat(actorURL) {
-      const actors = [this.$graffitiSession.value.actor, actorURL].sort(); // me + recipient
+    startChat(actorURL, name) {
+      const session = this.$graffitiSession.value;
+      if (!session) return;
+      const actors = [session.actor, actorURL].sort(); // me + recipient
       const newChat = {
         channel: actors.join("-"),
         time: Date.now(),
-        name: this.searchResults.find((u) => u.actor === actorURL).profile.name,
+        name: name,
       };
 
       this.chats.unshift(newChat); // add to top of list

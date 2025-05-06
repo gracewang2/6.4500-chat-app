@@ -1,7 +1,8 @@
-* {
-  box-sizing: border-box;
+html,
+body {
   margin: 0;
   padding: 0;
+  height: 100%;
 }
 
 body {
@@ -9,11 +10,41 @@ body {
   background-color: white;
   color: black;
   overflow: hidden;
-  height: 100vh;
+  height: 100%;
 }
 
 #app {
   width: 100%;
+  height: 100%;
+}
+
+.login-container {
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #faf9f0;
+}
+
+.login {
+  width: 30vw;
+  height: 20vh;
+  background-color: #83a6de;
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.login:hover {
+  background-color: #6a88b8;
+  transform: scale(1.05);
 }
 
 /* chat container */
@@ -90,4 +121,62 @@ body {
   display: flex;
   flex-direction: column;
   background: white;
+}
+
+/* user search modal */
+.small-modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(
+    255,
+    255,
+    255,
+    0.5
+  ); /* light overlay over the rest of the screen */
+}
+
+.small-modal-content {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  position: relative;
+  width: 83.333vw;
+  height: 74.074vh;
+  background: white;
+  border: 3px solid black;
+  border-radius: 16px;
+  padding: 36px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.user-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.small-modal-content .close {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: 2px solid black;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  z-index: 1000;
 }

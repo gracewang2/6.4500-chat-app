@@ -12,7 +12,9 @@ export const getProfile = async (actorURL, graffiti) => {
   return null;
 };
 
-export const saveProfile = async (profileData, sessionStorage, graffiti) => {
+// put is for adding new data, so patch should be used here instead (if modifying)
+// change "public-profiles" (development) to "new-public-profiles" (final)
+export const saveProfile = async (profileData, session, graffiti) => {
   await graffiti.put(
     {
       value: {
@@ -25,4 +27,5 @@ export const saveProfile = async (profileData, sessionStorage, graffiti) => {
     },
     session
   );
+  console.log("Profile saved successfully");
 };

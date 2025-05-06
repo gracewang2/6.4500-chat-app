@@ -19,10 +19,10 @@
   </head>
   <body>
     <div id="app">
-      <!-- login / logout -->
-      <button v-if="!$graffitiSession.value" @click="$graffiti.login()">
-        Log In
-      </button>
+      <!-- login -->
+      <div class="login-container" v-if="!$graffitiSession.value">
+        <button @click="$graffiti.login()" class="login">Log In</button>
+      </div>
       <template v-else>
         <!-- navigation bar -->
         <div class="nav-bar">
@@ -105,11 +105,13 @@
             <!-- user search modal (hidden by default) -->
             <div class="small-modal" v-if="showCreateChatModal">
               <div class="small-modal-content">
+                <span class="close" @click="showCreateChatModal = false">
+                  &times;
+                </span>
                 <input
                   v-model="userSearchQuery"
-                  placeholder="Search for user by name..."
+                  placeholder="🔎 Search for user by name..."
                 />
-
                 <graffiti-discover
                   :channels="['public-profiles']"
                   :schema="{
@@ -121,13 +123,16 @@
                 }"
                   v-slot="{objects: profiles}"
                 >
-                  <div
-                    v-for="profile in filterProfiles(profiles)"
-                    @click="startChat(profile.actor)"
-                    class="user-results"
-                  >
-                    <!-- component (hw11) -->
-                    <profile-summary :profile="profile" />
+                  <div class="user-grid">
+                    <div
+                      class="user-card"
+                      v-for="profile in filterProfiles(profiles)"
+                      @click="startChat(profile.actor, profile.value.name)"
+                      class="user-results"
+                    >
+                      <!-- component (hw11) -->
+                      <profile-summary :profile="profile.value" />
+                    </div>
                   </div>
                 </graffiti-discover>
               </div>
@@ -139,6 +144,7 @@
                 v-for="chat in sortedChats"
                 :key="chat.channel"
                 class="chat-item"
+                :class="{ active: currentChannel === chat.channel }"
                 @click="currentChannel = chat.channel"
               >
                 {{chat.name}}
