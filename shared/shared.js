@@ -22,8 +22,11 @@ export const saveProfile = async (profileData, session, graffiti) => {
         bio: profileData.bio || "",
         picture: profileData.picture || "../assets/default-profile-pic.png",
         updated: Date.now(),
+        generator:
+          "https://gracewang2.github.io/6.4500-chat-app/chat/chat.html",
+        describes: this.$graffitiSession.value.actor,
       },
-      channels: [session.actor, "public-profiles"], // store in the user's own channel + public channel
+      channels: [session.actor, "public-profiles", "designftw-2025-studio2"], // store in the user's own channel + public channel
     },
     session
   );

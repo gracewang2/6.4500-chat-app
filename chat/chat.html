@@ -22,6 +22,7 @@
       <!-- login -->
       <div class="login-container" v-if="!$graffitiSession.value">
         <button @click="$graffiti.login()" class="login">Log In</button>
+        <!-- <p>Start Chatting and Learning Languages!</p> -->
       </div>
       <template v-else>
         <!-- navigation bar -->
@@ -170,6 +171,7 @@
           <!-- messages -->
           <div class="chat-window">
             <graffiti-discover
+              autopoll
               v-slot="{ objects: messageObjects, isInitialPolling }"
               :channels="currentChannel ? [currentChannel] : []"
               :schema="{

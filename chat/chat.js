@@ -1,6 +1,7 @@
 import { createApp } from "vue";
-import { graffiti, getProfile, saveProfile } from "../shared/shared.js";
+import { getProfile, saveProfile } from "../shared/shared.js";
 import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
+import { GraffitiRemote } from "@graffiti-garden/implementation-remote";
 
 /** components */
 import ProfileSummary from "../shared/ProfileSummary.js";
