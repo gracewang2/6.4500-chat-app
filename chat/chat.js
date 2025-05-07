@@ -129,6 +129,7 @@ const app = createApp({
 
     async updateProfile() {
       console.log(this.profile);
+      if (!this.$graffitiSession.value) return;
       await saveProfile(
         // implemented in shared.js
         this.profile,
