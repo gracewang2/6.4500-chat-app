@@ -29,6 +29,13 @@ const app = createApp({
       activeTab: "Chat", // "Chat" or "Learn"
       showProfileMenu: false,
       showProfileModal: false,
+      showUpdatedGreenCheck: false,
+      updatedGreenCheckTimeout: null,
+
+      /** profile picture fields */
+      uploadProgress: 0,
+      maxFileSize: 2 * 1024 * 1024, // 2 MB
+      allowedTypes: ["image/png"],
 
       /** creating new DM */
       showCreateChatModal: false,
@@ -127,6 +134,17 @@ const app = createApp({
         this.$graffitiSession.value,
         this.$graffiti
       );
+
+      this.showUpdatedGreenCheck = true;
+
+      // clear any existing timeout
+      if (this.updatedGreenCheckTimeout)
+        clearTimeout(this.updatedGreenCheckTimeout);
+
+      // hide after 3 seconds
+      this.updatedGreenCheckTimeout = setTimeout(() => {
+        this.showUpdatedGreenCheck = false;
+      }, 3000);
     },
 
     // set default profile pic
@@ -139,8 +157,40 @@ const app = createApp({
       this.activeTab = tab;
     },
 
-    handlePictureUpload(event) {
+    async handlePictureUpload(event) {
       // TODO
+      const file = event.target.files[0];
+
+      // validate file
+      if (!file) return;
+      if (!this.allowedTypes.includes(file.type)) {
+        alert("Please upload a PNG image.");
+        return;
+      }
+      if (file.size > this.maxFileSize) {
+        alert("Image must be smaller than 2 MB");
+        return;
+      }
+
+      try {
+        // create preview while uploading
+        const previewUrl = URL.createObjectURL(file);
+        this.profile.picture = previewUrl;
+        const base64Image = await this.convertToBase64(file);
+        this.profile.picture = base64Image;
+      } catch (error) {
+        this.profile.picture = "../assets/default-profile-pic.png";
+      }
+    },
+
+    // convertToBase64 for profile picture uploading (in the future, sending files)
+    convertToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
     },
 
     toggleProfileMenu() {
@@ -177,6 +227,14 @@ const app = createApp({
       this.currentChannel = newChat.channel;
       this.showCreateChatModal = false;
     },
+
+    async getProfilePicture(actorURL) {
+      const profile = await getProfile(actor, this.$graffiti);
+      if (profile) {
+        return profile.picture;
+      }
+      return "../assets/default-profile-pic.png";
+    },
   },
 
   computed: {
@@ -184,7 +242,7 @@ const app = createApp({
       return this.chats.sort((a, b) => b.time - a.time);
     },
   },
-}).use(GraffitiPlugin, { graffiti });
+}).use(GraffitiPlugin, { graffiti: new GraffitiRemote() });
 
 app.component("profile-summary", ProfileSummary);
 console.log(app.component("profile-summary"));

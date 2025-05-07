@@ -53,7 +53,7 @@
           <div class="modal-content">
             <span
               class="close"
-              @click="showProfileModal = false; showProfileMenu = false"
+              @click="showProfileModal = false; showProfileMenu = false; showUpdatedGreenCheck = false"
             >
               &times;
             </span>
@@ -77,9 +77,24 @@
                   type="file"
                   @change="handlePictureUpload"
                   accept="image/*"
+                  ref="fileInput"
                 />
+                <!-- if there's a profile picture, show the preview -->
+                <div class="image-preview" v-if="profile-picture">
+                  <img :src="profile.picture" alt="Profile Preview" />
+                </div>
               </div>
-              <button @click="updateProfile">Update Profile</button>
+              <div class="profile-actions">
+                <button @click="updateProfile">Update Profile</button>
+                <transition name="fade">
+                  <label
+                    v-if="showUpdatedGreenCheck"
+                    class="updated-green-check"
+                  >
+                    Updated ✅
+                  </label>
+                </transition>
+              </div>
             </div>
 
             <!-- right-column (language & region) -->
@@ -154,18 +169,6 @@
 
           <!-- messages -->
           <div class="chat-window">
-            <form @submit.prevent="sendMessage($graffitiSession.value)">
-              <fieldset :disabled="sending">
-                <input
-                  type="text"
-                  v-model="myMessage"
-                  placeholder="Message"
-                  ref="messageInput"
-                  v-focus
-                />
-                <input type="submit" :value="sending? 'Sending...' : 'Send'" />
-              </fieldset>
-            </form>
             <graffiti-discover
               v-slot="{ objects: messageObjects, isInitialPolling }"
               :channels="currentChannel ? [currentChannel] : []"
@@ -182,54 +185,89 @@
                 }"
             >
               <!-- message display (only shows when in a channel) -->
-              <div v-if="currentChannel">
-                <ul>
-                  <li v-if="isInitialPolling">Loading...</li>
-                  <li
-                    v-for="object of messageObjects.sort((a, b) => b.value.published - a.value.published)"
-                    :key="object.url"
+              <div class="messages-container">
+                <div
+                  v-for="object of messageObjects.sort((a, b) => a.value.published - b.value.published)"
+                  :key="object.url"
+                  class="message-wrapper"
+                  :class="{ 'current-user': object.actor === $graffitiSession.value.actor }"
+                >
+                  <!-- other user's profile picture -->
+                  <div
+                    v-if="object.actor !== $graffitiSession.value.actor"
+                    class="profile-picture-container"
                   >
+                    <img
+                      :src="getProfilePicture(object.actor)"
+                      alt="Profile"
+                      class="other-user-profile"
+                    />
+                  </div>
+
+                  <!-- message content -->
+                  <div class="message-content-wrapper">
                     <!-- normal message display -->
                     <div
                       v-if="!editingMessage || editingMessage.url !== object.url"
+                      class="message-bubble"
                     >
-                      <strong>
-                        {{ object.actor }}<span
-                          v-if="object.actor===$graffitiSession.value.actor"
+                      <div>
+                        <div class="message-text">
+                          {{ object.value.content }}
+                        </div>
+                        <!-- edit/delete buttons -->
+                        <div
+                          v-if="object.actor === $graffitiSession.value.actor"
+                          class="message-actions"
                         >
-                          (you)</span
-                        > </strong
-                      >: {{ object.value.content }}
+                          <button @click="startEditing(object)">Edit ✏️</button>
+                          <button
+                            @click="deleteMessage(object, $graffitiSession.value)"
+                          >
+                            Delete ❌
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-                      <!-- only show edit/delete for your own messages -->
-                      <span
-                        v-if="object.actor === $graffitiSession.value.actor"
-                      >
-                        <button @click="startEditing(object)">Edit</button>
-                        <button
-                          @click="deleteMessage(object, $graffitiSession.value)"
-                        >
-                          Delete
+                    <!-- Edit form -->
+                    <div v-else class="edit-bubble">
+                      <textarea
+                        v-model="editingMessage.content"
+                        class="edit-input"
+                        rows="3"
+                      ></textarea>
+                      <div class="edit-actions">
+                        <button @click="saveEdit($graffitiSession.value)">
+                          Save ✅
                         </button>
-                      </span>
+                        <button @click="cancelEdit">Cancel ✖️</button>
+                      </div>
                     </div>
-
-                    <!-- edit form (only shows for the message being edited) -->
-                    <div v-else>
-                      <input
-                        :value="editingMessage.content"
-                        @input="editingMessage.content = $event.target.value"
-                        @keyup.enter="saveEdit($graffitiSession.value)"
-                      />
-                      <button @click="saveEdit($graffitiSession.value)">
-                        Save
-                      </button>
-                      <button @click="cancelEdit">Cancel</button>
-                    </div>
-                  </li>
-                </ul>
+                  </div>
+                </div>
               </div>
             </graffiti-discover>
+            <!-- sending messages -->
+            <div class="message-input-bar">
+              <form @submit.prevent="sendMessage($graffitiSession.value)">
+                <fieldset :disabled="sending">
+                  <input
+                    type="text"
+                    v-model="myMessage"
+                    placeholder="Message"
+                    ref="messageInput"
+                    v-focus
+                    class="message-input"
+                  />
+                  <input
+                    type="submit"
+                    :value="sending? 'Sending...' : 'Send ➤'"
+                    class="send-button"
+                  />
+                </fieldset>
+              </form>
+            </div>
           </div>
         </div>
       </template>
