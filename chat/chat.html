@@ -128,7 +128,9 @@
                   v-model="userSearchQuery"
                   placeholder="🔎 Search for user by name..."
                 />
+                <!-- make sure this doesn't show myself -->
                 <graffiti-discover
+                  autopoll
                   :channels="['public-profiles']"
                   :schema="{
                     properties: {
@@ -192,7 +194,7 @@
                   v-for="object of messageObjects.sort((a, b) => a.value.published - b.value.published)"
                   :key="object.url"
                   class="message-wrapper"
-                  :class="{ 'current-user': object.actor === $graffitiSession.value.actor }"
+                  :class="{'current-user': object.actor === $graffitiSession.value.actor}"
                 >
                   <!-- other user's profile picture -->
                   <div

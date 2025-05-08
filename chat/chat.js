@@ -1,5 +1,5 @@
 import { createApp } from "vue";
-import { getProfile, saveProfile } from "../shared/shared.js";
+import { getActorURL, getProfile, saveProfile } from "../shared/shared.js";
 import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
 import { GraffitiRemote } from "@graffiti-garden/implementation-remote";
 
@@ -47,10 +47,15 @@ const app = createApp({
     // on startup, load current user's profile
     if (this.$graffitiSession.value) {
       this.profile = await getProfile(
-        this.$graffitiSession.value.actor,
+        getActorURL(this.$graffitiSession.value.actor),
         this.$graffiti
       );
-      this.addUser(this.$graffitiSession.value.actor);
+      if (profile) {
+        this.profile = profile;
+      } else {
+        // new user - show profile modal immediately (TODO: replace with new modal)
+        this.showProfileModal = true;
+      }
     }
   },
 
@@ -106,7 +111,7 @@ const app = createApp({
     },
 
     async deleteMessage(message, session) {
-      if (confirm("Are you sure you want to delete this message?")) {
+      if (confirm("Delete this message?")) {
         try {
           await this.$graffiti.delete(message, session);
         } catch (error) {
@@ -215,10 +220,11 @@ const app = createApp({
       return this.searchResults;
     },
 
-    startChat(actorURL, name) {
+    startChat(actor, name) {
       const session = this.$graffitiSession.value;
       if (!session) return;
-      const actors = [session.actor, actorURL].sort(); // me + recipient
+      const actorURL = getActorURL(actor);
+      const actors = [getActorURL(session.actor), actorURL].sort(); // me + recipient
       const newChat = {
         channel: actors.join("-"),
         time: Date.now(),
