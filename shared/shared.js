@@ -1,35 +1,48 @@
-import { createApp } from "vue";
-import { GraffitiLocal } from "@graffiti-garden/implementation-local";
-import { GraffitiRemote } from "@graffiti-garden/implementation-remote";
-import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
+// shared functionality between Chat and Learn modes
 
-// export const graffiti = new GraffitiLocal();
-export const graffiti = new GraffitiRemote();
-
-// this isn't the "real" actorURL
-export const getActorURL = (actorId) =>
-  `https://gracewang2.github.io/6.4500-chat-app/actors/${actorId}`;
-
+// this doesn't work: Profile discovery failed: o.map is not a function. (In 'o.map(encodeURIComponent)', 'o.map' is undefined)
 export const getProfile = async (actorURL, graffiti) => {
-  const profile = await graffiti.get({ url: actorURL });
-  if (profile) return profile.value;
-  return null;
+  try {
+    // discover profiles in the public channel that describe this actor
+    // API: graffiti.discover(channels: string[], schema: Schema, session?: null | GraffitiSession)
+    const iterator = graffiti.discover(["public-profiles"], {
+      properties: {
+        name: { type: "string" },
+        bio: { type: "string" },
+        picture: { type: "string" },
+      },
+    });
+
+    for await (const result of iterator) {
+      if (result.object.actor === actorURL) {
+        console.log("Result of graffiti.discover: ", result);
+        console.log("Result.value of graffiti.discover: ", result.object.value);
+        return { data: result.object.value, url: result.object.url };
+      }
+    }
+  } catch (error) {
+    console.error("Profile discovery failed:", error);
+    return { data: null, url: null };
+  }
 };
 
 // put is for adding new data, so patch should be used here instead (if modifying)
 // change "public-profiles" (development) to "new-public-profiles" (final)
 export const saveProfile = async (profileData, session, graffiti) => {
-  const actorURL = getActorURL(session.actor);
-  console.log("actorURL: ", actorURL);
+  const actorURL = session.actor;
   try {
     // first, try to get the existing profile
     console.log("session.actor:", session.actor);
 
     // ERROR: Failed to save profile: GraffitiErrorUnrecognizedUriScheme: Unrecognized URL Scheme: [object Object]
-    const existingProfile = await graffiti.get({ url: actorURL });
-    if (existingProfile) {
+    const { data: existingProfile, url: profileURL } = await getProfile(
+      actorURL,
+      graffiti
+    );
+    if (existingProfile !== null && existingProfile !== undefined) {
       // profile exists, so use PATCH to update
       console.log("There exists an existing user with this name!");
+      console.log("Existing profile: ", existingProfile);
       await graffiti.patch(
         {
           value: [
@@ -55,7 +68,7 @@ export const saveProfile = async (profileData, session, graffiti) => {
             },
           ],
         },
-        undefined, // ??
+        profileURL, // ??
         session
       );
       console.log("Profile saved successfully");

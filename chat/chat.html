@@ -105,6 +105,62 @@
           </div>
         </div>
 
+        <!-- SET NEW profile modal (also hidden by default) -->
+        <div class="modal" v-if="showNewProfileModal && !showProfileMenu">
+          <div class="modal-content">
+            <span
+              class="close"
+              @click="showProfileModal = false; showProfileMenu = false; showUpdatedGreenCheck = false"
+            >
+              &times;
+            </span>
+            <!-- left-column (profile information) -->
+            <div class="left-column">
+              <h2>👤 Set Your Profile Information</h2>
+              <div class="form-group">
+                <label>Name</label>
+                <input v-model="profile.name" placeholder="Name" />
+              </div>
+              <div class="form-group">
+                <label>About Me</label>
+                <textarea
+                  v-model="profile.bio"
+                  placeholder="About Me"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label>Profile Picture</label>
+                <input
+                  type="file"
+                  @change="handlePictureUpload"
+                  accept="image/*"
+                  ref="fileInput"
+                />
+                <!-- if there's a profile picture, show the preview -->
+                <div class="image-preview" v-if="profile-picture">
+                  <img :src="profile.picture" alt="Profile Preview" />
+                </div>
+              </div>
+              <div class="profile-actions">
+                <button @click="updateProfile">Update Profile</button>
+                <transition name="fade">
+                  <label
+                    v-if="showUpdatedGreenCheck"
+                    class="updated-green-check"
+                  >
+                    Profile Created ✅
+                  </label>
+                </transition>
+              </div>
+            </div>
+
+            <!-- right-column (language & region) -->
+            <div class="right-column">
+              <h2>🌐 Set Your Language and Region</h2>
+            </div>
+          </div>
+        </div>
+
         <div class="chat-container">
           <!-- DM chats -->
           <div class="sidebar">
@@ -128,7 +184,7 @@
                   v-model="userSearchQuery"
                   placeholder="🔎 Search for user by name..."
                 />
-                <!-- make sure this doesn't show myself -->
+                <!-- TODO: make sure this doesn't show myself -->
                 <graffiti-discover
                   autopoll
                   :channels="['public-profiles']"

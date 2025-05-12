@@ -1,9 +1,9 @@
 import { createApp } from "vue";
-import { getActorURL, getProfile, saveProfile } from "../shared/shared.js";
+import { getProfile, saveProfile } from "../shared/shared.js";
 import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
 import { GraffitiRemote } from "@graffiti-garden/implementation-remote";
 
-/** components */
+/** components (hw11) */
 import ProfileSummary from "../shared/ProfileSummary.js";
 
 const app = createApp({
@@ -13,6 +13,7 @@ const app = createApp({
       myMessage: "",
       sending: false,
       currentChannel: null, // tracks current channel (null = home page)
+      // TODO: if null, don't show message sending bar
 
       /** editing messages */
       editingMessage: null, // stores (url, editContent): the message being edited and edited content
@@ -33,28 +34,33 @@ const app = createApp({
       showUpdatedGreenCheck: false,
       updatedGreenCheckTimeout: null,
 
+      /** creating new profile upon creating a new account */
+      showNewProfileModal: false,
+
       /** profile picture fields */
       uploadProgress: 0,
-      maxFileSize: 2 * 1024 * 1024, // 2 MB
-      allowedTypes: ["image/png"],
+      maxFileSize: 4 * 1024 * 1024, // 4 MB
+      allowedTypes: ["image/png", "image/jpg"],
 
       /** creating new DM */
       showCreateChatModal: false,
     };
   },
 
+  // created lifecycle hook: executes after the component instance has been initialized
   async created() {
     // on startup, load current user's profile
     if (this.$graffitiSession.value) {
-      this.profile = await getProfile(
-        getActorURL(this.$graffitiSession.value.actor),
+      profile = await getProfile(
+        this.$graffitiSession.value.actor,
         this.$graffiti
       );
-      if (profile) {
+      if (profile?.data) {
         this.profile = profile;
       } else {
         // new user - show profile modal immediately (TODO: replace with new modal)
-        this.showProfileModal = true;
+        console.log("NEW USER");
+        this.showNewProfileModal = true;
       }
     }
   },
@@ -171,11 +177,11 @@ const app = createApp({
       // validate file
       if (!file) return;
       if (!this.allowedTypes.includes(file.type)) {
-        alert("Please upload a PNG image.");
+        alert("Currently, we only allow PNG or JPG!");
         return;
       }
       if (file.size > this.maxFileSize) {
-        alert("Image must be smaller than 2 MB");
+        alert("Image must be smaller than 4 MB!");
         return;
       }
 
@@ -220,11 +226,10 @@ const app = createApp({
       return this.searchResults;
     },
 
-    startChat(actor, name) {
+    startChat(actorURL, name) {
       const session = this.$graffitiSession.value;
       if (!session) return;
-      const actorURL = getActorURL(actor);
-      const actors = [getActorURL(session.actor), actorURL].sort(); // me + recipient
+      const actors = [session.actor, actorURL].sort(); // me + recipient
       const newChat = {
         channel: actors.join("-"),
         time: Date.now(),
