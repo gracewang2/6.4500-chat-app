@@ -223,12 +223,27 @@ body {
 /* message bubbles */
 .message-bubble {
   max-width: 70%;
-  min-width: 120px;
-  padding: 10px 14px;
+  min-width: 200px;
+  padding: 14px 24px;
   border-radius: 18px;
   position: relative;
   word-wrap: break-word;
   width: fit-content;
+}
+
+.message-actions-toggle {
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 10px;
+  border: none;
+  background-color: #3f82ff;
+  color: rgba(0, 0, 0, 0.3);
+}
+.message-wrapper.current-user .message-actions-toggle {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* other user's bubbles */
@@ -245,6 +260,17 @@ body {
   color: white;
   margin-left: auto;
   max-width: min(70%, 600px);
+}
+
+.message-options-trigger {
+  cursor: pointer;
+  font-size: 18px;
+  color: rgba(0, 0, 0, 0.3);
+  text-align: right;
+  margin-top: 8px;
+}
+.message-wrapper.current-user .message-options-trigger {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* profile picture */

@@ -17,6 +17,7 @@ const app = createApp({
 
       /** editing messages */
       editingMessage: null, // stores (url, editContent): the message being edited and edited content
+      showEditDeleteFor: null, // stores which message to show the Edit and Delete options for (should be the same as editingMessage)
 
       /** profile information */
       profile: { name: "", bio: "", picture: "" },
@@ -120,6 +121,7 @@ const app = createApp({
         session
       );
       this.cancelEdit();
+      this.showEditDeleteFor = null;
     },
 
     async deleteMessage(message, session) {
@@ -142,6 +144,7 @@ const app = createApp({
 
     cancelEdit() {
       this.editingMessage = null;
+      this.showEditDeleteFor = null;
     },
 
     async updateProfile() {
@@ -309,6 +312,15 @@ const app = createApp({
       alert(
         "Learn mode is currently under construction. It will be here as soon as possible."
       );
+    },
+
+    // ... such that when you click on it, options to Edit or Delete appear
+    toggleEditDelete(object) {
+      if (this.showEditDeleteFor === object.url) {
+        this.showEditDeleteFor = null;
+      } else {
+        this.showEditDeleteFor = object.url;
+      }
     },
   },
 

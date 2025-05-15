@@ -278,10 +278,16 @@
                         <div class="message-text">
                           {{ object.value.content }}
                         </div>
+                        <button
+                          class="message-actions-toggle"
+                          @click="toggleEditDelete(object)"
+                        >
+                          ...
+                        </button>
 
                         <!-- edit/delete buttons -->
                         <div
-                          v-if="object.actor === $graffitiSession.value.actor"
+                          v-if="(object.actor === $graffitiSession.value.actor) && (showEditDeleteFor == object.url)"
                           class="message-actions"
                         >
                           <button @click="startEditing(object)">Edit ✏️</button>
