@@ -7,6 +7,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -58,6 +59,8 @@ body {
   height: 100%;
   width: 100%;
   margin-top: 5.555vh;
+  overflow-y: auto;
+  align-items: flex-end;
 }
 
 /* chat-list sidebar */
@@ -148,6 +151,10 @@ body {
     255,
     0.5
   ); /* light overlay over the rest of the screen */
+}
+
+.user-search-query {
+  width: 90%;
 }
 
 .small-modal-content {

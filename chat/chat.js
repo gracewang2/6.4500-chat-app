@@ -65,6 +65,12 @@ const app = createApp({
     }
   },
 
+  // mounted lifecycle hook: executes periodically or on specific events
+  async mounted() {
+    this.fetchChats();
+    console.log("this.chats = ", this.chats);
+  },
+
   methods: {
     async sendMessage(session) {
       if (!this.myMessage || !this.currentChannel) return; // Disable the send button when the message text is empty
@@ -223,10 +229,13 @@ const app = createApp({
           .toLowerCase()
           .includes(this.userSearchQuery.toLowerCase())
       );
+
+      // filter out the profiles that are currently in this.chats
+      // this.searchResults = this.searchResults.filter((profile) => );
       return this.searchResults;
     },
 
-    startChat(actorURL, name) {
+    async startChat(actorURL, name) {
       const session = this.$graffitiSession.value;
       if (!session) return;
       const actors = [session.actor, actorURL].sort(); // me + recipient
@@ -239,6 +248,18 @@ const app = createApp({
       this.chats.unshift(newChat); // add to top of list
       this.currentChannel = newChat.channel;
       this.showCreateChatModal = false;
+
+      await this.$graffiti.put(
+        {
+          // PUT to actorURL (my newChat)
+          value: {
+            chat: newChat,
+          },
+          channels: [actorURL],
+        },
+        session
+      );
+      console.log("chats is put to Graffiti: ", this.chats);
     },
 
     async getProfilePicture(actorURL) {
@@ -248,13 +269,50 @@ const app = createApp({
       }
       return "../assets/default-profile-pic.png";
     },
-  },
 
-  computed: {
-    sortedChats() {
-      return this.chats.sort((a, b) => b.time - a.time);
+    // because computed methods (sortedChats) cannot be async
+    async fetchChats() {
+      console.log("BEGINNING OF fetchChats");
+      if (this.$graffitiSession.value === undefined) {
+        return [];
+      }
+
+      const iterator = this.$graffiti.discover(
+        [this.$graffitiSession.value.actor],
+        {
+          properties: {
+            chat: { type: "object" },
+          },
+        }
+      );
+      let chats = [];
+      for await (const result of iterator) {
+        console.log("sortedChats compute: result = ", result); // shouldn't print anything other than chat objects
+        if (result === undefined) continue;
+        if (result.object === undefined) continue;
+        if (result.object.value === undefined) continue;
+        if (result.object.value.chat === undefined) continue;
+        console.log(
+          "Result of graffiti.discover for ALL CHATS (non-undefined): ",
+          result.object.value.chat
+        );
+        chats.push(result.object.value.chat);
+      }
+      let answer = chats.sort((a, b) => b.time - a.time);
+      this.chats = answer;
+      console.log("Sorted chats: ", answer);
+      return answer;
+    },
+
+    // alerts the user that I don't have the functionality for Learn mode (temporary)
+    tempAlertNoLearn() {
+      alert(
+        "Learn mode is currently under construction. It will be here as soon as possible."
+      );
     },
   },
+
+  computed: {},
 }).use(GraffitiPlugin, { graffiti: new GraffitiRemote() });
 
 app.component("profile-summary", ProfileSummary);

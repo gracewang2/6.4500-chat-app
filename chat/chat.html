@@ -28,7 +28,9 @@
         <!-- navigation bar -->
         <div class="nav-bar">
           <button class="nav-tab active" data-tab="chat">CHAT</button>
-          <button class="nav-tab" data-tab="learn">LEARN</button>
+          <button class="nav-tab" data-tab="learn" @click="tempAlertNoLearn">
+            LEARN
+          </button>
 
           <!-- dropdown menu (hidden by default) -->
           <div class="profile-dropdown">
@@ -142,7 +144,7 @@
                 </div>
               </div>
               <div class="profile-actions">
-                <button @click="updateProfile">Update Profile</button>
+                <button @click="updateProfile">Create Profile</button>
                 <transition name="fade">
                   <label
                     v-if="showUpdatedGreenCheck"
@@ -183,6 +185,7 @@
                 <input
                   v-model="userSearchQuery"
                   placeholder="🔎 Search for user by name..."
+                  class="user-search-query"
                 />
                 <!-- TODO: make sure this doesn't show myself -->
                 <graffiti-discover
@@ -215,7 +218,7 @@
             <!-- chat list -->
             <div class="chat-list">
               <div
-                v-for="chat in sortedChats"
+                v-for="chat in chats"
                 :key="chat.channel"
                 class="chat-item"
                 :class="{ active: currentChannel === chat.channel }"
@@ -275,6 +278,7 @@
                         <div class="message-text">
                           {{ object.value.content }}
                         </div>
+
                         <!-- edit/delete buttons -->
                         <div
                           v-if="object.actor === $graffitiSession.value.actor"
@@ -308,25 +312,28 @@
                 </div>
               </div>
             </graffiti-discover>
+
             <!-- sending messages -->
-            <div class="message-input-bar">
-              <form @submit.prevent="sendMessage($graffitiSession.value)">
-                <fieldset :disabled="sending">
-                  <input
-                    type="text"
-                    v-model="myMessage"
-                    placeholder="Message"
-                    ref="messageInput"
-                    v-focus
-                    class="message-input"
-                  />
-                  <input
-                    type="submit"
-                    :value="sending? 'Sending...' : 'Send ➤'"
-                    class="send-button"
-                  />
-                </fieldset>
-              </form>
+            <div v-if="currentChannel !== null">
+              <div class="message-input-bar">
+                <form @submit.prevent="sendMessage($graffitiSession.value)">
+                  <fieldset :disabled="sending">
+                    <input
+                      type="text"
+                      v-model="myMessage"
+                      placeholder="Message"
+                      ref="messageInput"
+                      v-focus
+                      class="message-input"
+                    />
+                    <input
+                      type="submit"
+                      :value="sending? 'Sending...' : 'Send ➤'"
+                      class="send-button"
+                    />
+                  </fieldset>
+                </form>
+              </div>
             </div>
           </div>
         </div>
